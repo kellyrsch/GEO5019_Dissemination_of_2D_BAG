@@ -25,7 +25,7 @@ con.load_extension("spatial")
 con.execute("INSTALL webbed FROM community")
 con.load_extension("webbed")
 
-XML_PATH = 'data\9999PND08122025-000001.xml'
+XML_PATH = 'data\*.xml'
 TABLE = "panden"
 
 con.sql(f"DROP TABLE IF EXISTS {TABLE};")
