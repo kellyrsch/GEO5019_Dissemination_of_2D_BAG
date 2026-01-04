@@ -1,4 +1,4 @@
-### Right now, this is a copy of my hw01 api setup script as a start for the hw03 API
+### Right now, this is a copy of my hw01 api setup script that we are editing as a start for the hw03 API
 
 import json
 from fastapi import FastAPI, Query
@@ -7,7 +7,7 @@ import duckdb
 app = FastAPI()
 
 ### Connect to the DuckDB (backend that was set up earlier in this assignment)
-db = duckdb.connect("src/buildings_database.db", read_only=True)
+db = duckdb.connect("bag.db", read_only=True)
 db.execute("INSTALL spatial")
 db.execute("LOAD spatial")
 
