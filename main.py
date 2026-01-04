@@ -1,71 +1,87 @@
 import duckdb as db
-from duckdb.sqltypes import VARCHAR, INTEGER
+import time
 
-def poslist_to_wkt(poslist: str, srs_dimension: int = 3) -> str:
-    coords = [float(v) for v in poslist.strip().split()]
-    if len(coords) % srs_dimension != 0:
-        raise ValueError("posList length is not divisible by srsDimension")
+def xml_to_db(XML_PATH):
+    con.sql(f"""
+    INSERT INTO {TABLE}
+    WITH docs AS (
+      SELECT xml FROM read_xml_objects('{XML_PATH}', maximum_file_size = 32000000)
+    ),
+    panden_xml AS (
+      SELECT unnest(xml_extract_elements(xml, '//Objecten:Pand')) AS pand_xml
+      FROM docs
+    ),
+    extracted AS (
+      SELECT
+        xml_extract_text(pand_xml, '//Objecten:identificatie')[1] AS identificatie,
+        xml_extract_text(pand_xml, '//Objecten:status')[1] AS status,
+        TRY_CAST(xml_extract_text(pand_xml, '//Objecten:oorspronkelijkBouwjaar')[1] AS INTEGER) AS oorspronkelijkBouwjaar,
+        TRY_CAST(xml_extract_text(pand_xml, '//Objecten:documentdatum')[1] AS DATE) AS documentdatum,
+        xml_extract_text(pand_xml, '//gml:posList')[1] AS poslist
+      FROM panden_xml
+      WHERE xml_extract_text(pand_xml, '//Historie:eindGeldigheid')[1] IS NULL
+    )
+    SELECT
+      identificatie,
+      status,
+      oorspronkelijkBouwjaar,
+      documentdatum,
+      ST_GeomFromText(
+          'POLYGON((' ||
+          array_to_string(
+            list_transform(
+              range(1, len(nums), 3),
+              i -> list_extract(nums, i) || ' ' || list_extract(nums, i + 1)
+            ),
+            ', '
+          ) ||
+          '))'
+        ) AS geom
+    FROM (
+      SELECT
+        identificatie,
+        status,
+        oorspronkelijkBouwjaar,
+        documentdatum,
+        list_filter(str_split(poslist, ' '), x -> x <> '') AS nums
+      FROM extracted
+    ) t
+    """)
 
-    points = []
-    for i in range(0, len(coords), srs_dimension):
-        x = coords[i]
-        y = coords[i + 1]
-        points.append((x, y))
+if __name__ == "__main__":
+    con = db.connect('bag.db')
+    con.install_extension("spatial")
+    con.load_extension("spatial")
+    con.execute("INSTALL webbed FROM community")
+    con.load_extension("webbed")
 
-    if points[0] != points[-1]:
-        points.append(points[0])
+    XML_PATH = 'data\*.xml'
+    TABLE = "panden"
 
-    coord_text = ", ".join(f"{x} {y}" for x, y in points)
-    return f"POLYGON(({coord_text}))"
+    tic = time.time()
 
-con = db.connect('bag.db')
-con.create_function("poslist_to_wkt", poslist_to_wkt, [VARCHAR, INTEGER], VARCHAR)
-con.install_extension("spatial")
-con.load_extension("spatial")
-con.execute("INSTALL webbed FROM community")
-con.load_extension("webbed")
+    con.sql(f"DROP TABLE IF EXISTS {TABLE};")
+    con.sql(f"""
+    CREATE TABLE {TABLE} (
+      identificatie TEXT,
+      status TEXT,
+      oorspronkelijkBouwjaar INTEGER,
+      documentdatum DATE,
+      geom GEOMETRY
+    );
+    """)
 
-XML_PATH = 'data\*.xml'
-TABLE = "panden"
+    for i in range(1,2391):
+        XML_PATH = f'data\9999PND08122025-{i:06d}.xml'
+        if i//100 == 0:
+            print(i)
+            print("time:", (time.time() - tic), "s")
+        xml_to_db(XML_PATH)
 
-con.sql(f"DROP TABLE IF EXISTS {TABLE};")
-con.sql(f"""
-CREATE TABLE {TABLE} (
-  identificatie TEXT,
-  oorspronkelijkBouwjaar INTEGER,
-  geometry_xml TEXT
-);
-""")
+    tac = time.time()
 
-con.execute(f"DROP TABLE IF EXISTS {TABLE};")
-con.execute(f"""
-CREATE TABLE {TABLE} (
-  identificatie TEXT,
-  oorspronkelijkBouwjaar INTEGER,
-  geom GEOMETRY
-);
-""")
+    print(con.sql(f"SELECT * FROM {TABLE} LIMIT 5;").show())
 
-# Insert rows
-con.execute(f"""
-INSERT INTO {TABLE}
-WITH docs AS (
-  SELECT xml
-  FROM read_xml_objects(?)
-),
-panden AS (
-  SELECT
-    unnest(xml_extract_elements(docs.xml, '//Objecten:Pand')) AS pand_xml
-  FROM docs
-)
-SELECT
-  xml_extract_text(pand_xml, '//Objecten:identificatie')[1] AS identificatie,
-  TRY_CAST(xml_extract_text(pand_xml, '//Objecten:oorspronkelijkBouwjaar')[1] AS INTEGER) AS oorspronkelijkBouwjaar,
-  CAST(ST_GeomFromText(poslist_to_wkt(xml_extract_text(pand_xml, '//Objecten:geometrie/gml:Polygon/gml:exterior/gml:LinearRing/gml:posList')[1], 3)) AS GEOMETRY) AS geom
-FROM panden
-WHERE xml_extract_text(pand_xml, '//Objecten:identificatie')[1] IS NOT NULL;
-""", [XML_PATH])
+    print("time:", (tac - tic), "s")
 
-print(con.execute(f"SELECT * FROM {TABLE} LIMIT 5;").fetchdf())
-
-con.close()
+    con.close()
