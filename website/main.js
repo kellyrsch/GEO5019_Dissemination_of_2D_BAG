@@ -16,7 +16,7 @@ let map = L.map('map-canvas', {
 map.attributionControl.setPrefix('');
 
 // BRT - (Base Registry Topography) BaseMap PDOK:
-let options = { maxZoom: 14, attribution: 'Map data: <a href="http://www.pdok.nl">BRT Achtergrondkaart</a>' }
+let options = { maxZoom: 14, attribution: 'Map data: <a href="http://www.pdok.nl">BRT Background map</a>' }
 let basemap_pdok = new L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:28992/{z}/{x}/{y}.png', options);
 
 basemap_pdok.getAttribution = function () {
