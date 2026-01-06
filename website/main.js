@@ -1,4 +1,4 @@
-var map = L.map('map').setView([52.005, 4.37], 13);
+//var map = L.map('map').setView([52.005, 4.37], 13);
 
 //L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:28992/{z}/{x}/{y}.png', {
 //    maxZoom: 19,
