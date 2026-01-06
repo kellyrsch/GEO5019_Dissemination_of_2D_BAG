@@ -39,3 +39,9 @@ basemap_pdok.getAttribution = function () {
   return 'BRT Achtergrondkaart <a href="http://www.kadaster.nl">Kadaster</a>.';
 }
 basemap_pdok.addTo(map);
+
+// To group the base layers (background) and make the ToC widget
+let baseLayers = {
+  "Topographical map": basemap_pdok
+};
+let toc = L.control.layers(baseLayers).addTo(map);
