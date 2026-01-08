@@ -220,28 +220,29 @@
             </div>
 
             <!-- Expandable content (hidden by default) -->
-            <div id="panel-content" class="panel-content">
-                <h3>📐 Draw Bounding Box</h3>
+                <div id="panel-content" class="panel-content">
+                    <h3>📐 Draw Bounding Box</h3>
 
-                <!-- Button to start drawing -->
-                <button id="draw-btn" class="btn btn-primary" onclick="startDrawing()">
-                    Draw Bounding Box
-                </button>
+                    <!-- Button to start drawing -->
+                    <button id="draw-btn" class="btn btn-primary" onclick="startDrawing()">
+                        Draw Bounding Box
+                    </button>
 
-                <!-- Button to clear the box -->
-                <button id="clear-btn" class="btn btn-secondary" onclick="clearBoundingBox()" disabled>
-                    Clear Bounding Box
-                </button>
+                    <!-- Button to clear the box -->
+                    <button id="clear-btn" class="btn btn-secondary" onclick="clearBoundingBox()" disabled>
+                        Clear Bounding Box
+                    </button>
 
-                <p class="info-text">Click two corner points on the map</p>
+                    <p class="info-text">Click two corner points on the map</p>
 
-                <!-- Coordinates display (hidden until box is drawn) -->
-                <div id="coordinates" class="coordinates-box" style="display: none;">
-                    <div class="label">RD Coordinates:</div>
-                    <div class="coord-line">xmin: <span class="coord-value" id="xmin">-</span></div>
-                    <div class="coord-line">ymin: <span class="coord-value" id="ymin">-</span></div>
-                    <div class="coord-line">xmax: <span class="coord-value" id="xmax">-</span></div>
-                    <div class="coord-line">ymax: <span class="coord-value" id="ymax">-</span></div>
+                    <!-- Coordinates display (hidden until box is drawn) -->
+                    <div id="coordinates" class="coordinates-box" style="display: none;">
+                        <div class="label">RD Coordinates:</div>
+                        <div class="coord-line">xmin: <span class="coord-value" id="xmin">-</span></div>
+                        <div class="coord-line">ymin: <span class="coord-value" id="ymin">-</span></div>
+                        <div class="coord-line">xmax: <span class="coord-value" id="xmax">-</span></div>
+                        <div class="coord-line">ymax: <span class="coord-value" id="ymax">-</span></div>
+                    </div>
                 </div>
             </div>
         </div>
