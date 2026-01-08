@@ -74,6 +74,12 @@ let secondPoint = null;          // Second corner clicked
 let currentRectangle = null;     // The rectangle shape on the map
 let tempMarker = null;           // Temporary marker for first point
 
+// Function: Toggle panel open/closed
+function togglePanel() {
+    let panel = document.getElementById('panel-content');
+    panel.classList.toggle('open');
+}
+
 // Function: Start drawing mode
 function startDrawing() {
     // Clear any existing box first

@@ -61,20 +61,50 @@
             /* CONTROL PANEL - Floating box on top of map */
             .control-panel {
                 position: absolute;
-                top: 10px;
+                top: 90px;  /* Position below search bar */
                 right: 10px;
                 background: white;
-                padding: 1rem;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                border-radius: 4px;
+                box-shadow: 0 1px 5px rgba(0,0,0,0.3);
                 z-index: 1000;
+            }
+
+            /* Icon button - small square button */
+            .icon-btn {
+                width: 34px;
+                height: 34px;
+                background: white;
+                border: 2px solid rgba(0,0,0,0.2);
+                border-radius: 4px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                transition: background 0.2s;
+            }
+
+            .icon-btn:hover {
+                background: #f9fafb;
+            }
+
+            /* Expanded panel (hidden by default) */
+            .panel-content {
+                display: none;
+                padding: 1rem;
                 min-width: 280px;
+                border-radius: 4px;
+            }
+
+            .panel-content.open {
+                display: block;
             }
 
             .control-panel h3 {
-                font-size: 1rem;
+                font-size: 0.95rem;
                 margin-bottom: 0.75rem;
                 color: #1f2937;
+                font-weight: 600;
             }
 
             /* BUTTON STYLING */
@@ -182,8 +212,15 @@
         </div>
 
         <div id="map-canvas">
-            <!-- CONTROL PANEL - floating on top of map -->
+            <!-- CONTROL PANEL -->
             <div class="control-panel">
+            <!-- Icon button (always visible) -->
+            <div class="icon-btn" onclick="togglePanel()" title="Draw Bounding Box">
+                📐
+            </div>
+
+            <!-- Expandable content (hidden by default) -->
+            <div id="panel-content" class="panel-content">
                 <h3>📐 Draw Bounding Box</h3>
 
                 <!-- Button to start drawing -->
@@ -208,6 +245,7 @@
                 </div>
             </div>
         </div>
+
 
 
          <!-- FOOTER SECTION -->
