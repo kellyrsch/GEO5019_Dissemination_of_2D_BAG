@@ -175,13 +175,13 @@ def read_building_id(
     if crs == 'EPSG:28992':
         db_result = db.execute("""
             SELECT identificatie, status, oorspronkelijkBouwjaar, documentdatum, ST_AsGeoJSON(geom) AS geom
-            FROM 'bag.parguet' 
+            FROM 'bag.parquet' 
             WHERE identificatie = ?;
         """, [pandRef]).fetchone()
     else:
         db_result = db.execute("""
             SELECT identificatie, status, oorspronkelijkBouwjaar, documentdatum, ST_AsGeoJSON(ST_Transform(geom,'EPSG:28992',?)) AS geom
-            FROM 'bag.parguet' 
+            FROM 'bag.parquet' 
             WHERE identificatie = ?;
         """, [crs,pandRef]).fetchone()
 
