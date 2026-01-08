@@ -98,7 +98,7 @@ function startDrawing() {
     // Listen for clicks on the map
     setTimeout(function() {
         map.on('click', onMapClick);
-    }, 100);
+    }, 500);
 }
 
 // Function: Handle map clicks while drawing
