@@ -425,7 +425,7 @@ async function downloadGeoJSON() {
     }
 
     // Build API URL
-    let apiUrl = `http://127.0.0.1:8000/collections/panden/items/bbox?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
+    let apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
 
     // Add gemeente filter if provided
     if (gemeente) {
