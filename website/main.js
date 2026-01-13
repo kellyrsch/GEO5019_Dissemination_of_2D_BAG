@@ -77,6 +77,7 @@ let firstPoint = null;           // First corner clicked
 let secondPoint = null;          // Second corner clicked
 let currentRectangle = null;     // The rectangle shape on the map
 let tempMarker = null;           // Temporary marker for first point
+let currentBboxCoords = null;    // Store current bbox coordinates for download
 
 // Function: Toggle panel open/closed
 function togglePanel() {
@@ -186,6 +187,9 @@ function displayCoordinates(point1, point2) {
     xmax = Math.round(xmax * 100) / 100;
     ymax = Math.round(ymax * 100) / 100;
 
+    // Store for download function
+    currentBboxCoords = { xmin, ymin, xmax, ymax };
+
     // Update the display
     document.getElementById('xmin').textContent = xmin;
     document.getElementById('ymin').textContent = ymin;
@@ -226,6 +230,10 @@ function clearBoundingBox() {
     document.getElementById('draw-btn').disabled = false;
     document.getElementById('draw-btn').textContent = 'Draw Bounding Box';
     document.getElementById('map-canvas').style.cursor = '';
+
+    // Clear bbox from download panel
+    document.getElementById('bbox-display').value = '';
+    currentBboxCoords = null;
 
     // Stop listening for clicks
     map.off('click', onMapClick);
