@@ -30,12 +30,6 @@ basemap_pdok.getAttribution = function () {
 }
 basemap_pdok.addTo(map);
 
-// To group the base layers (background) and make the ToC widget
-let baseLayers = {
-  "Topographical map": basemap_pdok
-};
-let toc = L.control.layers(baseLayers).addTo(map);
-
 
 // ===== BUILDING VISUALIZATION =====
 
@@ -142,6 +136,14 @@ function displayBuilding(feature) {
     // Add to buildings layer
     buildingLayer.addTo(buildingsLayer);
 }
+
+
+// To group the base layers (background) and make the ToC widget
+let baseLayers = {
+  "Topographical map": basemap_pdok,
+  "Buildings": buildingLayer
+};
+let toc = L.control.layers(baseLayers).addTo(map);
 
 // Load test building on page load (VERSION 1 - for testing)
 // Comment this out when VERSION 2 is ready
