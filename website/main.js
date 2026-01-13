@@ -230,3 +230,109 @@ function clearBoundingBox() {
     // Stop listening for clicks
     map.off('click', onMapClick);
 }
+
+
+// ===== DOWNLOAD FUNCTIONALITY =====
+
+// Function: Toggle download panel open/closed
+function toggleDownloadPanel() {
+    let panel = document.getElementById('download-panel-content');
+    panel.classList.toggle('open');
+}
+
+// Function: Use the drawn bounding box for download
+function useBboxForDownload() {
+    if (!currentBboxCoords) {
+        alert('Please draw a bounding box first!');
+        return;
+    }
+
+    // Display the bbox coordinates in the input field
+    let bboxText = `${currentBboxCoords.xmin}, ${currentBboxCoords.ymin}, ${currentBboxCoords.xmax}, ${currentBboxCoords.ymax}`;
+    document.getElementById('bbox-display').value = bboxText;
+}
+
+// Function: Get current visible map bounds as bbox
+function getVisibleBounds() {
+    // Get the current map view bounds
+    let bounds = map.getBounds();
+    let sw = bounds.getSouthWest(); // Southwest corner
+    let ne = bounds.getNorthEast(); // Northeast corner
+
+    // Convert to RD coordinates
+    let rdSW = proj4('EPSG:4326', 'EPSG:28992', [sw.lng, sw.lat]);
+    let rdNE = proj4('EPSG:4326', 'EPSG:28992', [ne.lng, ne.lat]);
+
+    return {
+        xmin: Math.round(rdSW[0] * 100) / 100,
+        ymin: Math.round(rdSW[1] * 100) / 100,
+        xmax: Math.round(rdNE[0] * 100) / 100,
+        ymax: Math.round(rdNE[1] * 100) / 100
+    };
+}
+
+// Function: Download GeoJSON with filters
+async function downloadGeoJSON() {
+    // Get filter values
+    let gemeente = document.getElementById('gemeente-input').value.trim();
+    let postcode = document.getElementById('postcode-input').value.trim();
+    let bboxInput = document.getElementById('bbox-display').value.trim();
+
+    // Determine which bbox to use
+    let bbox;
+    if (bboxInput) {
+        // Use the drawn bounding box
+        bbox = currentBboxCoords;
+    } else {
+        // Use visible map area as default
+        bbox = getVisibleBounds();
+        console.log('No filters specified, using visible map area');
+    }
+
+    // Build API URL
+    let apiUrl = `${API_BASE_URL}/bbox?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
+
+    // Add gemeente filter if provided
+    if (gemeente) {
+        apiUrl += `&gemeente=${encodeURIComponent(gemeente)}`;
+    }
+
+    // Add postcode filter if provided
+    if (postcode) {
+        apiUrl += `&postcode=${encodeURIComponent(postcode)}`;
+    }
+
+    console.log('Downloading from:', apiUrl);
+
+    try {
+        // Fetch data from API
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Convert to GeoJSON string
+        const geojsonString = JSON.stringify(data, null, 2);
+
+        // Create download link
+        const blob = new Blob([geojsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'bag_data.geojson';
+
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        console.log('Download complete!');
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on ${API_BASE_URL}`);
+    }
+}
