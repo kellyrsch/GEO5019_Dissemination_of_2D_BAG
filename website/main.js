@@ -45,7 +45,7 @@ let buildingsLayer = L.layerGroup().addTo(map);
 // VERSION 1: Load single test building
 async function loadTestBuilding() {
     const testPandId = '0503100000032914';
-    const apiUrl = `$http://127.0.0.1:8000/collections/panden/items/${testPandId}`;
+    const apiUrl = `http://127.0.0.1:8000/collections/panden/items/${testPandId}`;
 
     try {
         console.log('Loading test building from:', apiUrl);
@@ -72,7 +72,7 @@ async function loadTestBuilding() {
 //    const bounds = getVisibleBounds();
 //
 //    // Build API URL with bbox filter
-//    const apiUrl = `$http://127.0.0.1:8000/bbox?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}`;
+//    const apiUrl = `http://127.0.0.1:8000/bbox?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}`;
 //
 //    try {
 //        console.log('Loading buildings in viewport from:', apiUrl);
