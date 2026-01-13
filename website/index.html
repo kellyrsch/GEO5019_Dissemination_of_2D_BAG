@@ -17,7 +17,7 @@
               integrity="sha384-gOibXC9S5JpMrpEP0ee6wCSVHjFSEuOzLLzTUmg58qM+mJ1rI8h/aY3lS9YUmo55"
               crossorigin="">
 
-<!--        <link rel="stylesheet" href="main.css">-->
+        <!-- <link rel="stylesheet" href="main.css">-->
         <style>
             /* Reset default browser styles */
             * {
@@ -58,10 +58,21 @@
                 width: 100%;
             }
 
-            /* CONTROL PANEL - Floating box on top of map */
+            /* Widget for drawing bbox */
             .control-panel {
                 position: absolute;
                 top: 110px;  /* Position below search bar */
+                right: 10px;
+                background: white;
+                border-radius: 4px;
+                box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+                z-index: 1000;
+            }
+
+             /* Download panel positioned below bounding box panel */
+            .download-panel {
+                position: absolute;
+                top: 265px;  /* Below the bounding box icon */
                 right: 10px;
                 background: white;
                 border-radius: 4px;
@@ -182,6 +193,51 @@
                 font-style: italic;
             }
 
+            /* Input fields styling */
+            .input-field {
+                width: 100%;
+                padding: 0.5rem 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 4px;
+                font-size: 0.875rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .input-field:focus {
+                outline: none;
+                border-color: #2563eb;
+            }
+
+            .input-field:disabled {
+                background: #f3f4f6;
+                cursor: not-allowed;
+            }
+
+            /* Filter section styling */
+            .filter-section {
+                margin-bottom: 1rem;
+                padding-bottom: 1rem;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .filter-section:last-of-type {
+                border-bottom: none;
+            }
+
+            .filter-label {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: #374151;
+                margin-bottom: 0.5rem;
+            }
+
+            .filter-hint {
+                font-size: 0.75rem;
+                color: #9ca3af;
+                margin-top: 0.25rem;
+            }
+
             /* FOOTER STYLING */
             .footer {
                 background: #f9fafb;
@@ -208,18 +264,18 @@
         <!-- HEADER SECTION -->
         <div class="header">
             <h1>🏢 BAG Viewer and Downloader</h1>
-            <p>Interactive viewer for Dutch Building and Address data (BAG) - WIP 04</p>
+            <p>Interactive viewer for Dutch Building and Address data (BAG) - WIP 11</p>
         </div>
 
         <div id="map-canvas">
-            <!-- CONTROL PANEL -->
+            <!-- bbox widget -->
             <div class="control-panel">
             <!-- Icon button (always visible) -->
             <div class="icon-btn" onclick="togglePanel()" title="Draw Bounding Box">
                 📐
             </div>
 
-            <!-- Expandable content (hidden by default) -->
+                <!-- Expandable content (hidden by default) -->
                 <div id="panel-content" class="panel-content">
                     <h3>📐 Draw Bounding Box</h3>
 
@@ -247,6 +303,49 @@
             </div>
         </div>
 
+        <!-- DOWNLOAD PANEL - collapsible panel with icon button -->
+        <div class="download-panel">
+            <!-- Icon button (always visible) -->
+            <div class="icon-btn" onclick="toggleDownloadPanel()" title="Download Data" id="download-icon">
+                💾
+            </div>
+
+            <!-- Expandable content (hidden by default) -->
+            <div id="download-panel-content" class="panel-content">
+                <h3>💾 Download Data</h3>
+
+                <!-- Filter by Gemeente -->
+                <div class="filter-section">
+                    <label class="filter-label">Filter by Gemeente (optional)</label>
+                    <input type="text" id="gemeente-input" class="input-field" placeholder="e.g., Delft" />
+                    <div class="filter-hint">Leave empty to skip this filter</div>
+                </div>
+
+                <!-- Filter by Postcode -->
+                <div class="filter-section">
+                    <label class="filter-label">Filter by Postcode numbers (optional)</label>
+                    <input type="text" id="postcode-input" class="input-field" placeholder="e.g., 2628" />
+                    <div class="filter-hint">Leave empty to skip this filter</div>
+                </div>
+
+                <!-- Filter by Bounding Box -->
+                <div class="filter-section">
+                    <label class="filter-label">Filter by Bounding Box (optional)</label>
+                    <button class="btn btn-secondary" onclick="useBboxForDownload()">
+                        Use Drawn Bounding Box
+                    </button>
+                    <input type="text" id="bbox-display" class="input-field" placeholder="No bbox selected" disabled />
+                    <div class="filter-hint">Draw a bbox above or leave empty for visible area</div>
+                </div>
+
+                <!-- Download Button -->
+                <button class="btn btn-primary" onclick="downloadGeoJSON()">
+                    Download GeoJSON
+                </button>
+
+                <p class="info-text">If no filters are used, downloads data from visible map area</p>
+            </div>
+        </div>
 
 
          <!-- FOOTER SECTION -->
