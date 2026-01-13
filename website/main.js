@@ -425,7 +425,7 @@ async function downloadGeoJSON() {
     }
 
     // Build API URL
-    let apiUrl = `$http://127.0.0.1:8000/collections/panden/bbox?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
+    let apiUrl = `http://127.0.0.1:8000/collections/panden/bbox?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
 
     // Add gemeente filter if provided
     if (gemeente) {
@@ -468,6 +468,6 @@ async function downloadGeoJSON() {
         console.log('Download complete!');
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on $http://127.0.0.1:8000/collections/panden/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/panden/items`);
     }
 }
