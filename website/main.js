@@ -37,7 +37,7 @@ let baseLayers = {
 let toc = L.control.layers(baseLayers).addTo(map);
 
 
-// ===== BUILDING VISUALIZATION =====
+// ===== BUILDING VISUALISATION =====
 
 // Layer to hold building geometries
 let buildingsLayer = L.layerGroup().addTo(map);
@@ -101,7 +101,7 @@ async function loadBuildingsInView() {
 }
 
 // Function: Display a single building on the map
-function displayBuilding(feature, shouldZoom = true) {
+function displayBuilding(feature) {
     // Check if feature has geometry
     if (!feature.geometry || !feature.geometry.coordinates) {
         console.warn('Building has no geometry:', feature);
@@ -147,9 +147,9 @@ function displayBuilding(feature, shouldZoom = true) {
     buildingLayer.addTo(buildingsLayer);
 
     // Zoom to the building (helpful for testing)
-    if (shouldZoom) {
-        map.fitBounds(buildingLayer.getBounds());
-    }
+//    if (shouldZoom) {
+//        map.fitBounds(buildingLayer.getBounds());
+//    }
 }
 
 //// Load test building on page load (VERSION 1 - for testing)
@@ -159,9 +159,22 @@ function displayBuilding(feature, shouldZoom = true) {
 // VERSION 2: Load buildings when map moves/zooms
 // Uncomment these lines when your bbox API endpoint is ready:
 
-map.on('moveend', loadBuildingsInView);  // Reload when map stops moving
-map.on('zoomend', loadBuildingsInView);  // Reload when zoom changes
+function debounce(fn, delay) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+const debouncedLoadBuildings = debounce(loadBuildingsInView, 300);
+
+
 loadBuildingsInView();  // Initial load
+map.on('moveend', debouncedLoadBuildings);
+//map.on('moveend', loadBuildingsInView);  // Reload when map stops moving
+//map.on('zoomend', loadBuildingsInView);  // Reload when zoom changes
+
 
 
 
