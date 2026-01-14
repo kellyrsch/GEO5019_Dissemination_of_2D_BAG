@@ -472,117 +472,117 @@ async function downloadGeoJSON() {
 //    }
 //}
 
-// Build base API URL
-let baseUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
+    // Build base API URL
+    let baseUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
 
-// Add gemeente filter if provided
-if (gemeente) {
-    baseUrl += `&woonplaats={gemeente}`;
-}
+    // Add gemeente filter if provided
+    if (gemeente) {
+        baseUrl += `&woonplaats={gemeente}`;
+        }
 
-// Add postcode filter if provided
-if (postcode) {
-    baseUrl += `&postcode_4==${postcode}`;
-}
+    // Add postcode filter if provided
+    if (postcode) {
+        baseUrl += `&postcode_4==${postcode}`;
+        }
 
-console.log('Starting download from:', baseUrl);
+    console.log('Starting download from:', baseUrl);
 
-try {
-    // Fetch ALL pages of data
-    const allFeatures = await fetchAllPages(baseUrl);
+    try {
+        // Fetch ALL pages of data
+        const allFeatures = await fetchAllPages(baseUrl);
 
-    console.log(`Downloaded ${allFeatures.length} features total`);
+        console.log(`Downloaded ${allFeatures.length} features total`);
 
-    // Create GeoJSON FeatureCollection
-    const geojson = {
-        type: "FeatureCollection",
-        features: allFeatures
-    };
+        // Create GeoJSON FeatureCollection
+        const geojson = {
+            type: "FeatureCollection",
+            features: allFeatures
+        };
 
-    // Convert to string
-    const geojsonString = JSON.stringify(geojson, null, 2);
+        // Convert to string
+        const geojsonString = JSON.stringify(geojson, null, 2);
 
-    // Create download link
-    const blob = new Blob([geojsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'bag_data.geojson';
+        // Create download link
+        const blob = new Blob([geojsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'bag_data.geojson';
 
-    // Trigger download
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
 
-    console.log('Download complete!');
-    alert(`Successfully downloaded ${allFeatures.length} buildings!`);
+        console.log('Download complete!');
+        alert(`Successfully downloaded ${allFeatures.length} buildings!`);
 
-} catch (error) {
-    console.error('Download failed:', error);
-    alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/panden/items`);
-}
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/panden/items`);
+        }
 }
 
 // Function: Fetch all pages from paginated API
 async function fetchAllPages(baseUrl) {
-let allFeatures = [];
-let offset = 0;
-let limit = 50;
-let totalCount = null;
+    let allFeatures = [];
+    let offset = 0;
+    let limit = 50;
+    let totalCount = null;
 
-while (true) {
-    // Add limit and offset parameters to URL
-    const pageUrl = `{baseUrl}&limit=${limit}&offset=${offset}`;
-    console.log(`Fetching: offset=${offset}, limit=${limit}...`);
+    while (true) {
+        // Add limit and offset parameters to URL
+        const pageUrl = `{baseUrl}&limit=${limit}&offset=${offset}`;
+        console.log(`Fetching: offset=${offset}, limit=${limit}...`);
 
-    try {
-        const response = await fetch(pageUrl);
+        try {
+            const response = await fetch(pageUrl);
 
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
 
-        const data = await response.json();
+            const data = await response.json();
 
-        // Get total count from first response
-        if (totalCount === null && data.total_count !== undefined) {
-            totalCount = data.total_count;
-            console.log(`Total count: ${totalCount} features`);
-        }
+            // Get total count from first response
+            if (totalCount === null && data.total_count !== undefined) {
+                totalCount = data.total_count;
+                console.log(`Total count: ${totalCount} features`);
+                }
 
-        // Check if data has features
-        if (data.features && data.features.length > 0) {
-            // Add features from this page
-            allFeatures = allFeatures.concat(data.features);
-            console.log(`Got ${data.features.length} features (total so far: ${allFeatures.length}${totalCount ? `/${totalCount}` : ''})`);
+            // Check if data has features
+            if (data.features && data.features.length > 0) {
+                // Add features from this page
+                allFeatures = allFeatures.concat(data.features);
+                console.log(`Got ${data.features.length} features (total so far: ${allFeatures.length}${totalCount ? `/${totalCount}` : ''})`);
 
-            // Move to next page
-            offset += limit;
+                // Move to next page
+                offset += limit;
 
-            // Stop if we've fetched everything
-            if (totalCount !== null && offset >= totalCount) {
-                console.log('Reached total count, stopping');
+                // Stop if we've fetched everything
+                if (totalCount !== null && offset >= totalCount) {
+                    console.log('Reached total count, stopping');
+                    break;
+                    }
+
+                // Or stop if this page had fewer features than limit
+                if (data.features.length < limit) {
+                    console.log('Last page (fewer features than limit), stopping');
+                    break;
+                    }
+
+            } else {
+                // No features on this page, we're done
+                console.log('No more features, stopping');
                 break;
+                }
+
+        } catch (error) {
+            console.error(`Error fetching at offset ${offset}:`, error);
+            throw error;
             }
-
-            // Or stop if this page had fewer features than limit
-            if (data.features.length < limit) {
-                console.log('Last page (fewer features than limit), stopping');
-                break;
-            }
-
-        } else {
-            // No features on this page, we're done
-            console.log('No more features, stopping');
-            break;
-        }
-
-    } catch (error) {
-        console.error(`Error fetching at offset ${offset}:`, error);
-        throw error;
     }
-}
 
-return allFeatures;
+    return allFeatures;
 }
