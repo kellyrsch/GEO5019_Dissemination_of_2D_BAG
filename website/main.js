@@ -424,53 +424,53 @@ async function downloadGeoJSON() {
         console.log('No filters specified, using visible map area');
     }
 
-    // Build API URL
-    let apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
-
-    // Add gemeente filter if provided
-    if (gemeente) {
-        apiUrl += `&gemeente=${encodeURIComponent(gemeente)}`;
-    }
-
-    // Add postcode filter if provided
-    if (postcode) {
-        apiUrl += `&postcode=${encodeURIComponent(postcode)}`;
-    }
-
-    console.log('Downloading from:', apiUrl);
-
-    try {
-        // Fetch data from API
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        // Convert to GeoJSON string
-        const geojsonString = JSON.stringify(data, null, 2);
-
-        // Create download link
-        const blob = new Blob([geojsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'bag_data.geojson';
-
-        // Trigger download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        console.log('Download complete!');
-    } catch (error) {
-        console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/panden/items`);
-    }
-}
+//    // Build API URL
+//    let apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
+//
+//    // Add gemeente filter if provided
+//    if (gemeente) {
+//        apiUrl += `&gemeente=${encodeURIComponent(gemeente)}`;
+//    }
+//
+//    // Add postcode filter if provided
+//    if (postcode) {
+//        apiUrl += `&postcode=${encodeURIComponent(postcode)}`;
+//    }
+//
+//    console.log('Downloading from:', apiUrl);
+//
+//    try {
+//        // Fetch data from API
+//        const response = await fetch(apiUrl);
+//
+//        if (!response.ok) {
+//            throw new Error(`API error: ${response.status} ${response.statusText}`);
+//        }
+//
+//        const data = await response.json();
+//
+//        // Convert to GeoJSON string
+//        const geojsonString = JSON.stringify(data, null, 2);
+//
+//        // Create download link
+//        const blob = new Blob([geojsonString], { type: 'application/json' });
+//        const url = URL.createObjectURL(blob);
+//        const link = document.createElement('a');
+//        link.href = url;
+//        link.download = 'bag_data.geojson';
+//
+//        // Trigger download
+//        document.body.appendChild(link);
+//        link.click();
+//        document.body.removeChild(link);
+//        URL.revokeObjectURL(url);
+//
+//        console.log('Download complete!');
+//    } catch (error) {
+//        console.error('Download failed:', error);
+//        alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/panden/items`);
+//    }
+//}
 
 // Build base API URL
 let baseUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bbox.xmin}&miny=${bbox.ymin}&maxx=${bbox.xmax}&maxy=${bbox.ymax}`;
