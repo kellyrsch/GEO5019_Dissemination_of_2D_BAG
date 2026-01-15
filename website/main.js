@@ -510,7 +510,7 @@ async function downloadGeoJSON() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'bag_${dataType}.geojson';
+        link.download = `bag_${dataType}.geojson`;
 
         // Trigger download
         document.body.appendChild(link);
