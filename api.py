@@ -270,7 +270,7 @@ def read_pandRef(
 def read_verblijfsobjecten_items(
         crs: str = Query(default='EPSG:28992'),
         pandRef: str = Query(default=None),
-        limit: int = Query(50, ge=1, le=1000), # always show at least 1 and no more than 1000
+        limit: int = Query(50, ge=1, le=10000), # always show at least 1 and no more than 15000
         offset: int = Query(0, ge=0) # ensure that offset is always positive
 ):
     geom_crs = "geom" if crs == 'EPSG:28992' else f"ST_Transform(geom,'EPSG:28992','{crs}')"
