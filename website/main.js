@@ -594,7 +594,7 @@ async function downloadVboGeoJSON() {
 async function fetchAllPages(baseUrl) {
     let allFeatures = [];
     let offset = 0;
-    let limit = 50;
+    let limit = 10000;
     let totalCount = null;
 
     while (true) {
