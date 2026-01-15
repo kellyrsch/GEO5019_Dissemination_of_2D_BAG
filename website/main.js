@@ -1,5 +1,9 @@
 // ===== MAP SETUP =====
 
+// API Configuration - Change this to match your server setup
+const API_BASE_URL = window.location.origin + '/2dbagparquet/api'; // Uses same domain as website
+// Alternative: const API_BASE_URL = 'http://your-server.com:8001'; // For different server
+
 // Definition Rijksdriehoekstelsel (EPSG:28992)
 let res = [3440.640, 1720.320, 860.160, 430.080, 215.040, 107.520, 53.760, 26.880, 13.440, 6.720, 3.360, 1.680, 0.840, 0.420, 0.210, 0.105];
 let map = L.map('map-canvas', {
@@ -12,7 +16,7 @@ let map = L.map('map-canvas', {
   }),
   layers: [],
   center: [52.010, 4.36744],
-  zoom: 9,
+  zoom: 12,
 
 });
 map.attributionControl.setPrefix('');
@@ -71,7 +75,7 @@ async function loadBuildingsInView() {
     const bounds = getVisibleBounds();
 
     // Build API URL with bbox filter
-    const apiUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=200`;
+    const apiUrl = `${API_BASE_URL}/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=10000`;
 
     try {
         console.log('Loading buildings in viewport from:', apiUrl);
@@ -459,7 +463,7 @@ async function downloadPandenGeoJSON() {
 
 
     // Build base API URL
-    let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?`;
+    let baseUrl = `${API_BASE_URL}/collections/${dataType}/items?`;
     let hasFilters = false;
 
     // Add gemeente filter if provided
@@ -585,7 +589,7 @@ async function downloadVboGeoJSON() {
 
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on ${API_BASE_URL}/collections/${dataType}/items`);
         }
 }
 

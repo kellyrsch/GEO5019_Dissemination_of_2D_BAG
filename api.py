@@ -85,7 +85,7 @@ def read_collections():
 
     total_count_panden = db.execute("""
                SELECT COUNT(*)
-               FROM 'bag.parquet'""").fetchone()
+               FROM 'data/bag.parquet'""").fetchone()
 
     panden = {
         "id": 'panden',
@@ -106,7 +106,7 @@ def read_collections():
 
     total_count_vbo = db.execute("""
                SELECT COUNT(*)
-               FROM 'vbo.parquet'""").fetchone()
+               FROM 'data/vbo.parquet'""").fetchone()
 
     vbo = {
         "id": 'verblijfsobjecten',
@@ -143,16 +143,16 @@ def read_panden_items(
         crs: str = Query(default='EPSG:28992'),
         woonplaats: str = Query(default=None),
         postcode_4: str = Query(default=None),
-        limit: int = Query(50, ge=1, le=1000), # always show at least 1 and no more than 1000
+        limit: int = Query(50, ge=1, le=10000), # always show at least 1 and no more than 15000
         offset: int = Query(0, ge=0) # ensure that offset is always positive
 ):
     woonplaats = woonplaats.capitalize() if woonplaats else None
 
-    from_list = ["'bag.parquet' AS pnd"]
+    from_list = ["'data/bag.parquet' AS pnd"]
     if woonplaats:
-        from_list.append(f"(SELECT * FROM 'mun.parquet' WHERE naam = '{woonplaats}' OR identificatie = '{woonplaats}') as wpl")
+        from_list.append(f"(SELECT * FROM 'data/mun.parquet' WHERE naam = '{woonplaats}' OR identificatie = '{woonplaats}') as wpl")
     if postcode_4:
-        from_list.append(f"(SELECT * FROM 'postcode.parquet' WHERE postcode = {postcode_4}) as psc")
+        from_list.append(f"(SELECT * FROM 'data/postcode.parquet' WHERE postcode = {postcode_4}) as psc")
     from_statement = "FROM " + ", ".join(from_list)
 
     where_list = []
