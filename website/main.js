@@ -44,7 +44,7 @@ let buildingsLayer = L.layerGroup().addTo(map);
 //// VERSION 1: Load single test building
 //async function loadTestBuilding() {
 //    const testPandId = '0503100000032914';
-//    const apiUrl = `http://127.0.0.1:8000/collections/panden/items/${testPandId}`;
+//    const apiUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items/${testPandId}`;
 //
 //    try {
 //        console.log('Loading test building from:', apiUrl);
@@ -71,7 +71,7 @@ async function loadBuildingsInView() {
     const bounds = getVisibleBounds();
 
     // Build API URL with bbox filter
-    const apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=100`;
+    const apiUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=100`;
 
     try {
         console.log('Loading buildings in viewport from:', apiUrl);
@@ -459,7 +459,7 @@ async function downloadPandenGeoJSON() {
 
 
     // Build base API URL
-    let baseUrl = `http://127.0.0.1:8000/collections/panden/items?`;
+    let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?`;
     let hasFilters = false;
 
     // Add gemeente filter if provided
@@ -520,7 +520,7 @@ async function downloadPandenGeoJSON() {
 
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/panden/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items`);
         }
 }
 
@@ -536,7 +536,7 @@ async function downloadVboGeoJSON() {
     }
 
     // 3. Build API URL with pand parameter
-    let baseUrl = `http://127.0.0.1:8000/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
+    let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
 
     // 4. Fetch all pages (same pagination logic)
     const allFeatures = await fetchAllPages(baseUrl);
@@ -585,7 +585,7 @@ async function downloadVboGeoJSON() {
 
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on http://127.0.0.1:8000/collections/verblijfsobjecten/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items`);
         }
 }
 
