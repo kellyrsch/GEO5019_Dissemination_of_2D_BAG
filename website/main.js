@@ -597,7 +597,7 @@ async function downloadVboGeoJSON() {
 async function fetchAllPages(baseUrl) {
     let allFeatures = [];
     let offset = 0;
-    let limit = 10000;
+    let limit = 50; // change to 10000 for godzilla api
     let totalCount = null;
 
     while (true) {
