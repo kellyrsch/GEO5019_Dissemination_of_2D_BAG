@@ -157,7 +157,7 @@ def read_panden_items(
 
     where_list = []
     if (minx and miny and maxx and maxy):
-        where_list.append(f"ST_Intersects(pnd.geom, ST_MakeEnvelope({minx},{miny},{maxx},{maxy}))")
+        where_list.append(f"ST_XMax(pnd.geom) <= {maxx} AND ST_XMin(pnd.geom) >= {minx} AND ST_YMax(pnd.geom) <= {maxy} AND ST_YMin(pnd.geom) >= {miny}")
     if woonplaats:
         where_list.append("ST_Intersects(pnd.geom, wpl.geom)")
     if postcode_4:
