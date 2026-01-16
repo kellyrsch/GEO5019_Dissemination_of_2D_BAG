@@ -71,8 +71,8 @@ async function loadBuildingsInView() {
     const bounds = getVisibleBounds();
 
     // Build API URL with bbox filter
-    const apiUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=200`;
-    //const apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=200`;
+    //const apiUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=200`;
+    const apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=200`;
 
     try {
         console.log('Loading buildings in viewport from:', apiUrl);
@@ -460,8 +460,8 @@ async function downloadPandenGeoJSON() {
 
 
     // Build base API URL
-    let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?`;
-    //let baseUrl = `http://127.0.0.1:8000/collections/panden/items?`;
+    //let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?`;
+    let baseUrl = `http://127.0.0.1:8000/collections/panden/items?`;
     let hasFilters = false;
 
     // Add gemeente filter if provided
@@ -538,8 +538,8 @@ async function downloadVboGeoJSON() {
     }
 
     // 3. Build API URL with pand parameter
-    let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
-    //let baseUrl = `http://127.0.0.1:8000/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
+    //let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
+    let baseUrl = `http://127.0.0.1:8000/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
 
     // 4. Fetch all pages (same pagination logic)
     const allFeatures = await fetchAllPages(baseUrl);
@@ -597,7 +597,7 @@ async function downloadVboGeoJSON() {
 async function fetchAllPages(baseUrl) {
     let allFeatures = [];
     let offset = 0;
-    let limit = 10000; // change to 10000 for godzilla api
+    let limit = 50; // change to 10000 for godzilla api
     let totalCount = null;
 
     while (true) {
