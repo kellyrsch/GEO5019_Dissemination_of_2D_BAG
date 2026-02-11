@@ -1,11 +1,14 @@
 import duckdb as db
 import time
+from GML_to_WKT import gml_to_wkt
+from duckdb.sqltypes import VARCHAR, BLOB
 
-def xml_to_db(XML_PATH):
+def xml_to_db(XML_PATH, TABLE):
     con.sql(f"""
-    INSERT INTO {TABLE}
+    INSERT INTO {TABLE} (identificatie, status, oorspronkelijkBouwjaar, documentdatum, geom)
     WITH docs AS (
-      SELECT xml FROM read_xml_objects('{XML_PATH}', maximum_file_size = 32000000)
+      SELECT xml
+      FROM read_xml_objects('{XML_PATH}', maximum_file_size = 32000000)
     ),
     panden_xml AS (
       SELECT unnest(xml_extract_elements(xml, '//Objecten:Pand')) AS pand_xml
@@ -17,7 +20,12 @@ def xml_to_db(XML_PATH):
         xml_extract_text(pand_xml, '//Objecten:status')[1] AS status,
         TRY_CAST(xml_extract_text(pand_xml, '//Objecten:oorspronkelijkBouwjaar')[1] AS INTEGER) AS oorspronkelijkBouwjaar,
         TRY_CAST(xml_extract_text(pand_xml, '//Objecten:documentdatum')[1] AS DATE) AS documentdatum,
-        xml_extract_text(pand_xml, '//gml:posList')[1] AS poslist
+        CAST(
+          xml_extract_elements(
+            pand_xml,
+            '(//Objecten:geometrie/gml:Polygon | //Objecten:geometrie/Objecten:multivlak/gml:MultiSurface)[1]'
+          )[1] AS VARCHAR
+        ) AS geom_text
       FROM panden_xml
       WHERE xml_extract_text(pand_xml, '//Historie:eindGeldigheid')[1] IS NULL
     )
@@ -26,26 +34,9 @@ def xml_to_db(XML_PATH):
       status,
       oorspronkelijkBouwjaar,
       documentdatum,
-      ST_GeomFromText(
-          'POLYGON((' ||
-          array_to_string(
-            list_transform(
-              range(1, len(nums), 3),
-              i -> list_extract(nums, i) || ' ' || list_extract(nums, i + 1)
-            ),
-            ', '
-          ) ||
-          '))'
-        ) AS geom
-    FROM (
-      SELECT
-        identificatie,
-        status,
-        oorspronkelijkBouwjaar,
-        documentdatum,
-        list_filter(str_split(poslist, ' '), x -> x <> '') AS nums
-      FROM extracted
-    ) t
+      ST_GeomFromWkb(gml_to_wkt(geom_text)) AS geom
+    FROM extracted
+    WHERE geom_text IS NOT NULL AND geom_text <> ''
     """)
 
 if __name__ == "__main__":
@@ -54,8 +45,8 @@ if __name__ == "__main__":
     con.load_extension("spatial")
     con.execute("INSTALL webbed FROM community")
     con.load_extension("webbed")
+    con.create_function("gml_to_wkt", gml_to_wkt, [VARCHAR], BLOB)
 
-    XML_PATH = 'data\*.xml'
     TABLE = "panden"
 
     tic = time.time()
@@ -71,12 +62,12 @@ if __name__ == "__main__":
     );
     """)
 
-    for i in range(1,2391):
+    for i in range(1,2):
         XML_PATH = f'data\9999PND08122025-{i:06d}.xml'
-        if i//100 == 0:
+        if i%100 == 0:
             print(i)
             print("time:", (time.time() - tic), "s")
-        xml_to_db(XML_PATH)
+        xml_to_db(XML_PATH, TABLE)
 
     tac = time.time()
 

@@ -1,31 +1,23 @@
-// ===== MAP SETUP =====
+// ===== CRS DEFINITION =====
+proj4.defs('EPSG:28992', '+proj=sterea +lat_0=52.15616055555555 +lon_0=5.38763888888889 +k=0.9999079 +x_0=155000 +y_0=463000 +ellps=bessel +units=m +towgs84=565.2369,50.0087,465.658,-0.406857330322398,0.350732676542563,-1.8703473836068,4.0812 +no_defs');
 
-// API Configuration - Change this to match your server setup
-const API_BASE_URL = window.location.origin + '/2dbagparquet/api'; // Uses same domain as website
-// Alternative: const API_BASE_URL = 'http://your-server.com:8001'; // For different server
-
-// Definition Rijksdriehoekstelsel (EPSG:28992)
-let res = [3440.640, 1720.320, 860.160, 430.080, 215.040, 107.520, 53.760, 26.880, 13.440, 6.720, 3.360, 1.680, 0.840, 0.420, 0.210, 0.105];
-let map = L.map('map-canvas', {
-  continuousWorld: true,
-//  crs: new L.Proj.CRS('EPSG:28992', '+proj=sterea +lat_0=52.15616055555555 +lon_0=5.38763888888889 +k=0.9999079 +x_0=155000 +y_0=463000 +ellps=bessel +units=m +towgs84=565.2369,50.0087,465.658,-0.406857330322398,0.350732676542563,-1.8703473836068,4.0812 +no_defs', {
-//    //transformation: L.Transformation(-1, -1, 0, 0),
-//    resolutions: res,
-//    origin: [-285401.920, 903401.920],
-//    bounds: L.bounds([-285401.920, 903401.920], [595401.920, 22598.080])
-//  }),
-  layers: [],
-  center: [52.010, 4.36744],
-  zoom: 12,
-
+// ===== MAP SETUP + BUILDING VISUALISATION =====
+// Map setup
+const map = L.map('map-canvas', {
+  center: [52.1, 5.1],
+  zoom: 9
 });
+
 map.attributionControl.setPrefix('');
 
-L.DomEvent.disableClickPropagation(
-  document.querySelector('.control-panel')
-);
+//// Protomap basemap PMTiles - didnt work
+//const base = protomapsL.leafletLayer({
+//  url: 'http://127.0.0.1:8000/static/nl.pmtiles', // white protomap basemap
+//  theme: 'light'
+//}).addTo(map);
 
-// BRT - (Base Registry Topography) BaseMap PDOK:
+
+//// BRT - (Base Registry Topography) BaseMap PDOK - didnt work well
 //let options = { maxZoom: 14, attribution: 'Map data: <a href="http://www.pdok.nl">BRT Achtergrondkaart</a>' }
 //let basemap_pdok = new L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:4326/{z}/{x}/{y}.png', options);
 //
@@ -34,220 +26,219 @@ L.DomEvent.disableClickPropagation(
 //}
 //basemap_pdok.addTo(map);
 
+
 // OSM baselayer
 let options = { maxZoom: 19, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' }
-let basemap_osm = new L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', options);
+let basemap_osm = new L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', options);
 
 basemap_osm.getAttribution = function () {
     return 'OSM Background Map <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }
 basemap_osm.addTo(map);
 
-//import { PMTiles, leafletRasterLayer } from "pmtiles";
-//const p = new PMTiles('example.pmtiles')
-//leafletRasterLayer(p,{attribution:'© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map)
 
+// Add PMTiles panden layer
+const pandenLayer = protomapsL.leafletLayer({
+  url: 'http://127.0.0.1:8000/static/pnd.pmtiles',
 
-// To group the base layers (background) and make the ToC widget
-let baseLayers = {
-  "Topographical map": basemap_osm
-//  "PMTiles": p
-};
-
-
-
-// ===== BUILDING VISUALISATION =====
-
-// Layer to hold building geometries
-let buildingsLayer = L.layerGroup().addTo(map);
-
-//// VERSION 1: Load single test building
-//async function loadTestBuilding() {
-//    const testPandId = '0503100000032914';
-//    const apiUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items/${testPandId}`;
-//
-//    try {
-//        console.log('Loading test building from:', apiUrl);
-//        const response = await fetch(apiUrl);
-//
-//        if (!response.ok) {
-//            throw new Error(`API error: ${response.status}`);
-//        }
-//
-//        const data = await response.json();
-//        console.log('Test building data:', data);
-//
-//        // Add the building to the map
-//        displayBuilding(data);
-//
-//    } catch (error) {
-//        console.error('Failed to load test building:', error);
-//    }
-//}
-
-// VERSION 2: Load buildings in visible viewport
-async function loadBuildingsInView() {
-    // Get visible map bounds
-    const bounds = getVisibleBounds();
-
-    // Build API URL with bbox filter
-    const apiUrl = `${API_BASE_URL}/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&crs=EPSG:3857&limit=200`;
-    //const apiUrl = `http://127.0.0.1:8000/collections/panden/items?minx=${bounds.xmin}&miny=${bounds.ymin}&maxx=${bounds.xmax}&maxy=${bounds.ymax}&limit=10000`;
-
-    try {
-        console.log('Loading buildings in viewport from:', apiUrl);
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log(`Loaded ${data.features ? data.features.length : 0} buildings`);
-
-        // Clear existing buildings
-        buildingsLayer.clearLayers();
-
-        // Add each building to the map
-        if (data.features && data.features.length > 0) {
-            data.features.forEach(feature => {
-                displayBuilding(feature);
-            });
-        }
-
-    } catch (error) {
-        console.error('Failed to load buildings in viewport:', error);
-    }
-}
-
-// Function: Display a single building on the map
-function displayBuilding(feature) {
-    // Check if feature has geometry
-    if (!feature.geometry || !feature.geometry.coordinates) {
-        console.warn('Building has no geometry:', feature);
-        return;
-    }
-
-    // Convert GeoJSON to Leaflet layer
-    let buildingLayer = L.geoJSON(feature, {
-        style: {
-            color: '#ef4444',        // Red outline
-            weight: 2,               // Line thickness
-            fillColor: '#fca5a5',    // Light red fill
-            fillOpacity: 0.4         // Semi-transparent
-        },
-        // CRITICAL: Convert RD coordinates to lat/lng
-        coordsToLatLng: function(coords) {
-            // coords = [x, y] in RD (EPSG:28992)
-            // Need to convert to [lng, lat] for proj4, then to Leaflet's [lat, lng]
-
-            let wgs84 = proj4('EPSG:28992', 'EPSG:4326', [coords[0], coords[1]]);
-            // wgs84 = [lng, lat]
-
-            return L.latLng(wgs84[1], wgs84[0]); // Leaflet wants [lat, lng]
-        },
-        onEachFeature: function(feature, layer) {
-            // Add popup with building info
-            if (feature.properties) {
-                let popupContent = '<div style="font-size: 0.875rem;">';
-                popupContent += `<strong>Building ID:</strong> ${feature.id || 'N/A'}<br>`;
-
-                // Add other properties
-                for (let key in feature.properties) {
-                    popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
-                }
-
-                popupContent += '</div>';
-                layer.bindPopup(popupContent);
-            }
-        }
-    });
-
-    // Add to buildings layer
-    buildingLayer.addTo(buildingsLayer);
-
-    // Zoom to the building (helpful for testing)
-//    if (shouldZoom) {
-//        map.fitBounds(buildingLayer.getBounds());
-//    }
-}
-
-//// Load test building on page load (VERSION 1 - for testing)
-//// Comment this out when VERSION 2 is ready
-//loadTestBuilding();
-
-// VERSION 2: Load buildings when map moves/zooms
-// Uncomment these lines when your bbox API endpoint is ready:
-
-// Add a delay to reloading the buildings after moving to make it work more smoothly (less fetches)
-function debounce(fn, delay) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => fn.apply(this, args), delay);
-    };
-}
-
-const debouncedLoadBuildings = debounce(loadBuildingsInView, 300);
-
-
-//loadBuildingsInView();  // Initial load
-//map.on('moveend', debouncedLoadBuildings);
-//map.on('moveend', loadBuildingsInView);  // Reload when map stops moving
-//map.on('zoomend', loadBuildingsInView);  // Reload when zoom changes
-
-// Only load building visualisation when layer is turned on
-map.on('overlayadd', function (e) {
-    if (e.layer === buildingsLayer) {
-        console.log('Buildings layer turned ON');
-        loadBuildingsInView();
-
-        // Start listening to map movement
-        map.on('moveend', debouncedLoadBuildings);
-    }
-});
-
-// Don't load buildings/remove buildings loaded when layer is turned off
-map.on('overlayremove', function (e) {
-    if (e.layer === buildingsLayer) {
-        console.log('Buildings layer turned OFF');
-
-        // Stop listening
-        map.off('moveend', debouncedLoadBuildings);
-
-        // Optional: clear buildings from map
-        buildingsLayer.clearLayers();
-    }
-});
-
-// Add PMTiles layer
-//let munic = protomapsL.leafletLayer({url:'data/bag.pmtiles'})
-
-let panden_vis = protomapsL.leafletLayer({
-  url: 'http://127.0.0.1/static/bag.pmtiles',
-  paint_rules: [
+  paintRules: [
     {
-      dataLayer: 'municipalities', // MUST match layer name in PMTiles
+      dataLayer: 'pnd',
       symbolizer: new protomapsL.PolygonSymbolizer({
-        fill: '#60a5fa',
+        fill: '#ef4444',
         opacity: 0.4,
-        stroke: '#1e3a8a',
+        stroke: '#991b1b',
         width: 1
       })
     }
-  ]
-});
+  ],
+}).addTo(map);
 
-panden_vis.addTo(map)
+class MyPlaceSymbolizer {
+    draw(context,geom,z,feature) {
+        // console.log(properties)
+        let pt = geom[0][0]
+        var fill = "gray"
+        context.fillStyle = fill
+        context.strokeStyle = "black"
+        context.beginPath()
+        context.arc(pt.x,pt.y,2,0,2*Math.PI)
+        context.stroke()
+        context.fill()
+    }
+}
 
-// Add a menu with overlay checkboxes for the building visualisation
-let overlays = {
-    "Buildings": buildingsLayer,
-    "Panden": panden_vis
+const vboLayer = protomapsL.leafletLayer({
+  url: 'http://127.0.0.1:8000/static/vbo.pmtiles',
+
+  paintRules: [
+    {
+      dataLayer: "vbo", // must match the *source layer name* inside vbo.pmtiles
+      symbolizer: new MyPlaceSymbolizer(),
+      minzoom: 12
+    }
+  ],
+}).addTo(map);
+
+
+
+//// Store PMTiles source for querying
+//let pmtilesSource = null;
+//
+//// Initialize PMTiles source for feature queries
+//(async () => {
+//    try {
+//        pmtilesSource = new pmtiles.PMTiles('http://127.0.0.1:8000/static/pnd.pmtiles');
+//        await pmtilesSource.getHeader();
+//        console.log('PMTiles source loaded for feature queries');
+//    } catch (error) {
+//        console.error('Failed to load PMTiles source:', error);
+//    }
+//})();
+//
+//// Add click handler to query features
+//map.on('click', async function(e) {
+//    if (!pmtilesSource) {
+//        console.log('PMTiles source not ready yet');
+//        return;
+//    }
+//
+//    const zoom = map.getZoom();
+//    const latlng = e.latlng;
+//
+//    // Only query if buildings layer is visible
+//    if (!map.hasLayer(buildingsLayer)) {
+//        return;
+//    }
+//
+//    try {
+//        // Convert click coordinates to tile coordinates
+//        const tileZoom = Math.min(zoom, 14); // Use max zoom 14 for tiles
+//        const x = Math.floor((latlng.lng + 180) / 360 * Math.pow(2, tileZoom));
+//        const y = Math.floor((1 - Math.log(Math.tan(latlng.lat * Math.PI / 180) + 1 / Math.cos(latlng.lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, tileZoom));
+//
+//        // Get the tile data
+//        const tileData = await pmtilesSource.getZxy(tileZoom, x, y);
+//
+//        if (!tileData) {
+//            console.log('No tile data at this location');
+//            return;
+//        }
+//
+//        // Parse the tile (MVT format)
+//        const tile = new mapboxgl.VectorTile(new Pbf(tileData.data));
+//
+//        // Get the 'pnd' layer
+//        const layer = tile.layers['pnd'];
+//
+//        if (!layer) {
+//            console.log('No pnd layer in tile');
+//            return;
+//        }
+//
+//        // Convert click point to tile pixel coordinates
+//        const tileSize = 256;
+//        const worldSize = tileSize * Math.pow(2, tileZoom);
+//        const pixelX = ((latlng.lng + 180) / 360 * worldSize) % tileSize;
+//        const pixelY = ((1 - Math.log(Math.tan(latlng.lat * Math.PI / 180) + 1 / Math.cos(latlng.lat * Math.PI / 180)) / Math.PI) / 2 * worldSize) % tileSize;
+//
+//        // Check each feature to see if it contains the click point
+//        let clickedFeature = null;
+//
+//        for (let i = 0; i < layer.length; i++) {
+//            const feature = layer.feature(i);
+//            const geom = feature.loadGeometry();
+//
+//            // Simple point-in-polygon check
+//            if (pointInPolygon([pixelX, pixelY], geom)) {
+//                clickedFeature = feature;
+//                break;
+//            }
+//        }
+//
+//        if (clickedFeature) {
+//            // Show popup with feature properties
+//            const props = clickedFeature.properties;
+//
+//            let html = '<div style="font-size: 0.875rem;"><strong>Pand</strong><br>';
+//            for (const key in props) {
+//                html += `<strong>${key}:</strong> ${props[key]}<br>`;
+//            }
+//            html += '</div>';
+//
+//            L.popup()
+//                .setLatLng(latlng)
+//                .setContent(html)
+//                .openOn(map);
+//        } else {
+//            console.log('No feature found at click point');
+//        }
+//
+//    } catch (error) {
+//        console.error('Error querying building:', error);
+//    }
+//});
+//
+//// Helper function: point-in-polygon test
+//function pointInPolygon(point, polygons) {
+//    for (const polygon of polygons) {
+//        let inside = false;
+//        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+//            const xi = polygon[i].x, yi = polygon[i].y;
+//            const xj = polygon[j].x, yj = polygon[j].y;
+//
+//            const intersect = ((yi > point[1]) !== (yj > point[1]))
+//                && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
+//            if (intersect) inside = !inside;
+//        }
+//        if (inside) return true;
+//    }
+//    return false;
+//}
+
+
+// Layer toggling
+const baseLayers = {
+  //"Basemap PDOK": basemap_pdok,
+  "Basemap OSM": basemap_osm
 };
 
-let toc = L.control.layers(baseLayers, overlays).addTo(map);
+const overlays = {
+  "Panden": pandenLayer,
+  "Verblijfsobjecten": vboLayer
+};
 
+L.control.layers(baseLayers, overlays).addTo(map);
+
+map.on("click", async (e) => {
+  // Project lat/lng -> EPSG:3857 meters (Leaflet default CRS)
+  const p = map.options.crs.project(e.latlng);
+
+  // tiny 2m x 2m bbox around click (tweak as needed)
+  const r = 1;
+  const minx = p.x - r, miny = p.y - r, maxx = p.x + r, maxy = p.y + r;
+
+  const url =
+    `http://127.0.0.1:8000/collections/panden/items?` +
+    `minx=${minx}&miny=${miny}&maxx=${maxx}&maxy=${maxy}&bbox_crs=EPSG:3857&crs=EPSG:3857&limit=5`;
+
+  const resp = await fetch(url);
+  if (!resp.ok) return;
+
+  const data = await resp.json();
+  if (!data.features || !data.features.length) return;
+
+  const f = data.features[0];
+  const props = f.properties || {};
+
+  let html = `<strong>Pand</strong><br>`;
+  for (const k in props) html += `<strong>${k}</strong>: ${props[k]}<br>`;
+
+  L.popup().setLatLng(e.latlng).setContent(html).openOn(map);
+});
+
+
+//==== ADD GEOCODER ====//
 // Register a geocoder to the map app
 register_geocoder = function (mapInstance) {
   let polygon = null;
@@ -312,13 +303,50 @@ function startDrawing() {
     // Change cursor to crosshair
     document.getElementById('map-canvas').style.cursor = 'crosshair';
 
-    // Listen for clicks on the map
-    map.on('click', onMapClick);
+    // Listen for clicks on the map with timeout to prevent first click being clicking the button
+    //map.on('click', onMapClick);
+    setTimeout(() => {
+        map.on('click', onMapClick);
+    }, 100);
 }
+
+// Close panels when clicking outside of them
+document.addEventListener("click", function (event) {
+    const bboxPanel = document.querySelector(".control-panel");
+    const bboxContent = document.getElementById("panel-content");
+    const bboxIcon = bboxPanel.querySelector(".icon-btn");
+
+    const downloadPanel = document.querySelector(".download-panel");
+    const downloadContent = document.getElementById("download-panel-content");
+    const downloadIcon = document.getElementById("download-icon");
+
+    // --- Bounding box panel ---
+    if (
+        bboxContent.classList.contains("open") &&
+        !bboxPanel.contains(event.target)
+    ) {
+        bboxContent.classList.remove("open");
+    }
+
+    // --- Download panel ---
+    if (
+        downloadContent.classList.contains("open") &&
+        !downloadPanel.contains(event.target)
+    ) {
+        downloadContent.classList.remove("open");
+    }
+});
+
+document.querySelectorAll(".control-panel, .download-panel").forEach(panel => {
+    panel.addEventListener("click", e => e.stopPropagation());
+});
 
 // Function: Handle map clicks while drawing
 function onMapClick(e) {
-    if (!isDrawing) return;
+    if (!isDrawing) {
+        map.off('click', onMapClick);
+        return;
+    }
 
     if (firstPoint === null) {
         // FIRST CLICK - store first corner
@@ -353,13 +381,16 @@ function onMapClick(e) {
 
         // Stop drawing mode
         isDrawing = false;
+
+        // Stop listening for clicks
+        map.off('click', onMapClick);
+
         document.getElementById('map-canvas').style.cursor = '';
         document.getElementById('draw-btn').disabled = false;
         document.getElementById('draw-btn').textContent = 'Draw Bounding Box';
         document.getElementById('clear-btn').disabled = false;
 
-        // Stop listening for clicks
-        map.off('click', onMapClick);
+
     }
 }
 
@@ -500,7 +531,8 @@ async function downloadPandenGeoJSON() {
 
 
     // Build base API URL
-    let baseUrl = `${API_BASE_URL}/collections/${dataType}/items?`;
+    // let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?`;
+    let baseUrl = `http://127.0.0.1:8000/collections/panden/items?`;
     let hasFilters = false;
 
     // Add gemeente filter if provided
@@ -627,7 +659,7 @@ async function downloadVboGeoJSON() {
 
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on ${API_BASE_URL}/collections/${dataType}/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items`);
         }
 }
 

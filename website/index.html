@@ -264,7 +264,7 @@
         <!-- HEADER SECTION -->
         <div class="header">
             <h1>🏢 BAG Viewer and Downloader</h1>
-            <p>Interactive viewer for Dutch Building and Address data (BAG) - WIP 43</p>
+            <p>Interactive viewer for Dutch Building and Address data (BAG) - WIP 155</p>
         </div>
 
         <div id="map-canvas">
@@ -364,12 +364,13 @@
 
          <!-- FOOTER SECTION -->
         <div class="footer">
-            Data source: <a href="https://www.pdok.nl" target="_blank">PDOK</a> |
-            Map tiles: <a href="https://www.kadaster.nl" target="_blank">Kadaster</a>
+            Buildings: <a href="https://www.digitaleoverheid.nl/overzicht-van-alle-onderwerpen/stelsel-van-basisregistraties/10-basisregistraties/bag/" target="_blank">BAG</a> |
+            Basemap: <a href="http://www.openstreetmap.org" target="_blank">OpenStreetMap</a>
         </div>
 
         <!-- Link JS -->
         <!-- <script src="/leaflet/dist/leaflet.js"></script> -->
+        <script src="https://unpkg.com/protomaps-leaflet@4.0.1/dist/protomaps-leaflet.js"></script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
                 integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
                 crossorigin=""></script>
@@ -381,10 +382,15 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.12/proj4.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4leaflet/1.0.2/proj4leaflet.min.js"></script>
+
+        <!-- Add libraries for pmtiles info popup -->
+        <script src="https://unpkg.com/pbf@3.2.1/dist/pbf.js"></script>
+        <script src="https://unpkg.com/@mapbox/vector-tile@1.3.1/dist/vectortile.js"></script>
+
         <script src="lib/proj4leaflet.js"></script>
         <script src="lib/leaflet.wms.js"></script>
         <script src="lib/geojson.wfs.js"></script>
-        <script src="main.js?v=4"></script>
+        <script src="main.js"></script>
 
     </body>
 

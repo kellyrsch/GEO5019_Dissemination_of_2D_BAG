@@ -1,64 +1,54 @@
 import os
-from pathlib import Path
-import duckdb as db
 import time
+import duckdb as db
+from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
+
+from GML_to_WKT import gml_to_wkt
+from duckdb.sqltypes import VARCHAR, BLOB
+
 
 SQL_TO_PARQUET = r"""
 COPY (
-    WITH docs AS (
-      SELECT xml
-      FROM read_xml_objects($xml_path, maximum_file_size = 32000000)
-    ),
-    vbos_xml AS (
-      SELECT unnest(xml_extract_elements(xml, '//Objecten:Verblijfsobject')) AS vbo_xml
-      FROM docs
-    ),
-    extracted AS (
-      SELECT
-        xml_extract_text(vbo_xml, '//Objecten:identificatie')[1] AS identificatie,
-        xml_extract_text(vbo_xml, '//Objecten:status')[1] AS status,
-        xml_extract_text(vbo_xml, '//Objecten:gebruiksdoel')[1] AS gebruiksdoel,
-        TRY_CAST(xml_extract_text(vbo_xml, '//Objecten:oppervlakte')[1] AS INTEGER) AS oppervlakte,
-        TRY_CAST(xml_extract_text(vbo_xml, '//Objecten:documentdatum')[1] AS DATE) AS documentdatum,
-        xml_extract_text(vbo_xml, '//Objecten:geconstateerd')[1] AS geconstateerd,
-        xml_extract_text(vbo_xml, '//Objecten:documentnummer')[1] AS documentnummer,
-        xml_extract_text(vbo_xml, '//Objecten-ref:PandRef')[1] AS pand,
-        xml_extract_text(vbo_xml, '//Objecten:heeftAlsHoofdadres/Objecten-ref:NummeraanduidingRef')[1] AS hoofdadres,
-        xml_extract_text(vbo_xml, '//gml:pos')[1] AS pos
-      FROM vbos_xml
-      WHERE xml_extract_text(vbo_xml, '//Historie:eindGeldigheid')[1] IS NULL
-    )
+  WITH docs AS (
+    SELECT xml
+    FROM read_xml_objects($xml_path, maximum_file_size = 32000000)
+  ),
+  panden_xml AS (
+    SELECT unnest(xml_extract_elements(xml, '//Objecten:Pand')) AS pand_xml
+    FROM docs
+  ),
+  extracted AS (
     SELECT
-      identificatie,
-      status,
-      gebruiksdoel,
-      documentdatum,
-      oppervlakte,
-      geconstateerd,
-      documentnummer,
-      pand,
-      hoofdadres,
-      ST_GeomFromText(
-        'POINT(' ||
-            list_extract(nums, 1) || ' ' || list_extract(nums, 2) ||
-        ')'
-      ) AS geom
-    FROM (
-      SELECT
-        identificatie,
-        status,
-        gebruiksdoel,
-        documentdatum,
-        oppervlakte,
-        geconstateerd,
-        documentnummer,
-        pand,
-        hoofdadres,
-        list_filter(str_split(pos, ' '), x -> x <> '') AS nums
-      FROM extracted)
-    ) TO $out_parquet (FORMAT 'parquet')
-    """
+      xml_extract_text(pand_xml, '//Objecten:identificatie')[1] AS identificatie,
+      xml_extract_text(pand_xml, '//Objecten:status')[1] AS status,
+      TRY_CAST(xml_extract_text(pand_xml, '//Objecten:oorspronkelijkBouwjaar')[1] AS INTEGER) AS oorspronkelijkBouwjaar,
+      xml_extract_text(pand_xml, '//Objecten:geconstateerd')[1] AS geconstateerd,
+      xml_extract_text(pand_xml, '//Objecten:documentnummer')[1] AS documentnummer,
+      TRY_CAST(xml_extract_text(pand_xml, '//Objecten:documentdatum')[1] AS DATE) AS documentdatum,
+      CAST(
+        xml_extract_elements(
+          pand_xml,
+          '(//Objecten:geometrie/gml:Polygon | //Objecten:geometrie/Objecten:multivlak/gml:MultiSurface)[1]'
+        )[1] AS VARCHAR
+      ) AS geom_text
+    FROM panden_xml
+    WHERE xml_extract_text(pand_xml, '//Historie:eindGeldigheid')[1] IS NULL
+  )
+  SELECT
+    identificatie,
+    status,
+    oorspronkelijkBouwjaar,
+    geconstateerd,
+    documentnummer,
+    documentdatum,
+    ST_GeomFromWkb(gml_to_wkt(geom_text)) AS geom
+  FROM extracted
+  WHERE geom_text IS NOT NULL AND geom_text <> ''
+)
+TO $out_parquet (FORMAT 'parquet');
+"""
+
 
 def _process_one_xml(xml_path: str, out_parquet: str, use_webbed: bool = True) -> str:
     """
@@ -74,10 +64,13 @@ def _process_one_xml(xml_path: str, out_parquet: str, use_webbed: bool = True) -
         con.execute("INSTALL webbed FROM community")
         con.load_extension("webbed")
 
+    con.create_function("gml_to_wkt", gml_to_wkt, [VARCHAR], BLOB)
+
     con.execute(SQL_TO_PARQUET, {"xml_path": xml_path, "out_parquet": out_parquet})
 
     con.close()
     return out_parquet
+
 
 def parallel_xmls_to_single_parquet(
     xml_paths,
@@ -119,21 +112,22 @@ def parallel_xmls_to_single_parquet(
     )
     con.close()
 
+
 if __name__ == "__main__":
     tic = time.time()
 
     # Build your XML list (example: 1 file; extend to your range)
     xml_paths = []
-    for i in range(1, 2534):
+    for i in range(1, 2391):
         # Use Path to avoid backslash escape issues
-        xml_paths.append(Path(f"VBO") / f"9999VBO08122025-{i:06d}.xml")
+        xml_paths.append(Path(f"data") / f"9999PND08122025-{i:06d}.xml")
 
     parallel_xmls_to_single_parquet(
         xml_paths=xml_paths,
-        final_parquet_path="vbo.parquet",
+        final_parquet_path="panden.parquet",
         tmp_dir="tmp_panden_shards",
-        workers=None,  # defaults to CPU count
-        use_webbed=True,  # set to False if you don't need it
+        workers=None,          # defaults to CPU count
+        use_webbed=True,       # set to False if you don't need it
     )
 
     print("time:", (time.time() - tic), "s")

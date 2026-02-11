@@ -1,5 +1,6 @@
 import json
 from fastapi import FastAPI, Query
+from fastapi.staticfiles import StaticFiles
 import duckdb
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,8 +15,10 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+app.mount("/static", StaticFiles(directory="website/data"), name="static")
+
 # Host link
-root = "godzilla.bk.tudelft.nl.bagparquet"
+root = "http://127.0.0.1:8000"
 
 # Connect to the DuckDB
 db = duckdb.connect()
@@ -140,31 +143,33 @@ def read_panden_items(
         miny: float = Query(default=None),
         maxx: float = Query(default=None),
         maxy: float = Query(default=None),
+        bbox_crs: str = Query(default='EPSG:28992'),
         crs: str = Query(default='EPSG:28992'),
         woonplaats: str = Query(default=None),
         postcode_4: str = Query(default=None),
-        limit: int = Query(50, ge=1, le=10000), # always show at least 1 and no more than 15000
+        limit: int = Query(50, ge=1, le=1000), # always show at least 1 and no more than 1000
         offset: int = Query(0, ge=0) # ensure that offset is always positive
 ):
     woonplaats = woonplaats.capitalize() if woonplaats else None
 
-    from_list = ["'data/bag.parquet' AS pnd"]
+    geom_bbox = f"ST_MakeEnvelope({minx},{miny},{maxx},{maxy})" if bbox_crs == 'EPSG:28992' else f"ST_Transform(ST_MakeEnvelope({minx},{miny},{maxx},{maxy}),'{bbox_crs}','EPSG:28992')"
+    geom_crs = "pnd.geom" if crs == 'EPSG:28992' else f"ST_Transform(pnd.geom,'EPSG:28992','{crs}')"
+
+    from_list = ["'pnd.parquet' AS pnd"]
     if woonplaats:
-        from_list.append(f"(SELECT * FROM 'data/mun.parquet' WHERE naam = '{woonplaats}' OR identificatie = '{woonplaats}') as wpl")
+        from_list.append(f"(SELECT * FROM 'wpl.parquet' WHERE naam = '{woonplaats}' OR identificatie = '{woonplaats}') as wpl")
     if postcode_4:
         from_list.append(f"(SELECT * FROM 'data/postcode.parquet' WHERE postcode = {postcode_4}) as psc")
     from_statement = "FROM " + ", ".join(from_list)
 
     where_list = []
     if (minx and miny and maxx and maxy):
-        where_list.append(f"ST_Intersects(pnd.geom, ST_MakeEnvelope({minx},{miny},{maxx},{maxy}))")
+        where_list.append(f"ST_Intersects(pnd.geom, {geom_bbox})")
     if woonplaats:
         where_list.append("ST_Intersects(pnd.geom, wpl.geom)")
     if postcode_4:
         where_list.append("ST_Intersects(pnd.geom, psc.geom)")
     where_statement = "WHERE " + " AND ".join(where_list) if len(where_list) > 0 else ""
-
-    geom_crs = "pnd.geom" if crs == 'EPSG:28992' else f"ST_Transform(pnd.geom,'EPSG:28992','{crs}')"
 
     ## Count how many buildings in the bbox
     total_count_b_in_bbox = db.execute(f"""
@@ -247,7 +252,7 @@ def read_pandRef(
 
     db_result = db.execute(f"""
         SELECT identificatie, status, oorspronkelijkBouwjaar, documentdatum, ST_AsGeoJSON({geom_crs}) AS geom
-        FROM 'bag.parquet' 
+        FROM 'pnd.parquet' 
         WHERE identificatie = ?;
     """, [pandRef]).fetchone()
 
@@ -268,18 +273,45 @@ def read_pandRef(
 
 @app.get("/collections/verblijfsobjecten/items")
 def read_verblijfsobjecten_items(
+        minx: float = Query(default=None),
+        miny: float = Query(default=None),
+        maxx: float = Query(default=None),
+        maxy: float = Query(default=None),
+        bbox_crs: str = Query(default='EPSG:28992'),
         crs: str = Query(default='EPSG:28992'),
+        woonplaats: str = Query(default=None),
+        postcode_4: str = Query(default=None),
         pandRef: str = Query(default=None),
-        limit: int = Query(50, ge=1, le=10000), # always show at least 1 and no more than 15000
+        limit: int = Query(50, ge=1, le=1000), # always show at least 1 and no more than 1000
         offset: int = Query(0, ge=0) # ensure that offset is always positive
 ):
-    geom_crs = "geom" if crs == 'EPSG:28992' else f"ST_Transform(geom,'EPSG:28992','{crs}')"
+    woonplaats = woonplaats.capitalize() if woonplaats else None
 
-    where_statement = f"WHERE pand = '{pandRef}'" if pandRef else ""
+    geom_bbox = f"ST_MakeEnvelope({minx},{miny},{maxx},{maxy})" if bbox_crs == 'EPSG:28992' else f"ST_Transform(ST_MakeEnvelope({minx},{miny},{maxx},{maxy}),'{bbox_crs}','EPSG:28992')"
+    geom_crs = "vbo.geom" if crs == 'EPSG:28992' else f"ST_Transform(vbo.geom,'EPSG:28992','{crs}')"
+
+    from_list = ["'vbo.parquet' AS vbo"]
+    if woonplaats:
+        from_list.append(
+            f"(SELECT * FROM 'wpl.parquet' WHERE naam = '{woonplaats}' OR identificatie = '{woonplaats}') as wpl")
+    if postcode_4:
+        from_list.append(f"(SELECT * FROM 'postcode.parquet' WHERE postcode = {postcode_4}) as psc")
+    from_statement = "FROM " + ", ".join(from_list)
+
+    where_list = []
+    if (minx and miny and maxx and maxy):
+        where_list.append(f"ST_Intersects(vbo.geom, {geom_bbox})")
+    if woonplaats:
+        where_list.append("ST_Intersects(vbo.geom, wpl.geom)")
+    if postcode_4:
+        where_list.append("ST_Intersects(vbo.geom, psc.geom)")
+    if pandRef:
+        where_list.append(f"vbo.pand = {pandRef}")
+    where_statement = "WHERE " + " AND ".join(where_list) if len(where_list) > 0 else ""
 
     total_count_b_in_bbox = db.execute(f"""
                 SELECT COUNT(*)
-                FROM 'vbo.parquet'
+                {from_statement}
                 {where_statement};
             """).fetchone()
     total_count = total_count_b_in_bbox[0]
