@@ -1,6 +1,10 @@
 // ===== CRS DEFINITION =====
 proj4.defs('EPSG:28992', '+proj=sterea +lat_0=52.15616055555555 +lon_0=5.38763888888889 +k=0.9999079 +x_0=155000 +y_0=463000 +ellps=bessel +units=m +towgs84=565.2369,50.0087,465.658,-0.406857330322398,0.350732676542563,-1.8703473836068,4.0812 +no_defs');
 
+// ===== BASE URLS =====
+const BASE_URL = window.location.origin + "/2dbagparquet";
+const API_BASE_URL = window.location.origin + "/2dbagparquetapi";
+
 // ===== MAP SETUP + BUILDING VISUALISATION =====
 // Map setup
 const map = L.map('map-canvas', {
@@ -39,7 +43,7 @@ basemap_osm.addTo(map);
 
 // Add PMTiles panden layer
 const pandenLayer = protomapsL.leafletLayer({
-  url: 'http://127.0.0.1:8000/static/pnd.pmtiles',
+  url: BASE_URL + '/data/pnd.pmtiles',
 
   paintRules: [
     {
@@ -69,7 +73,7 @@ class MyPlaceSymbolizer {
 }
 
 const vboLayer = protomapsL.leafletLayer({
-  url: 'http://127.0.0.1:8000/static/vbo.pmtiles',
+  url: BASE_URL + '/data/vbo.pmtiles',
 
   paintRules: [
     {
@@ -88,7 +92,7 @@ const vboLayer = protomapsL.leafletLayer({
 //// Initialize PMTiles source for feature queries
 //(async () => {
 //    try {
-//        pmtilesSource = new pmtiles.PMTiles('http://127.0.0.1:8000/static/pnd.pmtiles');
+//        pmtilesSource = new pmtiles.PMTiles(BASE_URL + '/data/PMTiles/pnd.pmtiles');
 //        await pmtilesSource.getHeader();
 //        console.log('PMTiles source loaded for feature queries');
 //    } catch (error) {
@@ -219,7 +223,7 @@ map.on("click", async (e) => {
   const minx = p.x - r, miny = p.y - r, maxx = p.x + r, maxy = p.y + r;
 
   const url =
-    `http://127.0.0.1:8000/collections/panden/items?` +
+    API_BASE_URL + '/collections/panden/items?' +
     `minx=${minx}&miny=${miny}&maxx=${maxx}&maxy=${maxy}&bbox_crs=EPSG:3857&crs=EPSG:3857&limit=5`;
 
   const resp = await fetch(url);
@@ -531,8 +535,7 @@ async function downloadPandenGeoJSON() {
 
 
     // Build base API URL
-    // let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items?`;
-    let baseUrl = `http://127.0.0.1:8000/collections/panden/items?`;
+    let baseUrl = API_BASE_URL + '/collections/panden/items?';
     let hasFilters = false;
 
     // Add gemeente filter if provided
@@ -593,7 +596,7 @@ async function downloadPandenGeoJSON() {
 
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/panden/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on ${API_BASE_URL}/collections/panden/items`);
         }
 }
 
@@ -609,8 +612,7 @@ async function downloadVboGeoJSON() {
     }
 
     // 3. Build API URL with pand parameter
-    let baseUrl = `https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
-    //let baseUrl = `http://127.0.0.1:8000/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
+    let baseUrl = `${API_BASE_URL}/collections/verblijfsobjecten/items?pandRef=${encodeURIComponent(pandId)}`;
 
     // 4. Fetch all pages (same pagination logic)
     const allFeatures = await fetchAllPages(baseUrl);
@@ -659,7 +661,7 @@ async function downloadVboGeoJSON() {
 
     } catch (error) {
         console.error('Download failed:', error);
-        alert(`Download failed: ${error.message}\n\nMake sure your API is running on https://godzilla.bk.tudelft.nl/2dbagparquet/api/collections/verblijfsobjecten/items`);
+        alert(`Download failed: ${error.message}\n\nMake sure your API is running on ${API_BASE_URL}/collections/verblijfsobjecten/items`);
         }
 }
 
