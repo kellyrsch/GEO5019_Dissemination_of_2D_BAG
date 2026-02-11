@@ -311,7 +311,11 @@ def read_verblijfsobjecten_items(
 
     total_count_b_in_bbox = db.execute(f"""
                 SELECT COUNT(*)
+<<<<<<< Updated upstream
                 {from_statement}
+=======
+                FROM 'data/vbo.parquet'
+>>>>>>> Stashed changes
                 {where_statement};
             """).fetchone()
     total_count = total_count_b_in_bbox[0]
@@ -319,7 +323,7 @@ def read_verblijfsobjecten_items(
     ## Get the buildings in this bbox
     db_result = db.execute(f"""
              SELECT identificatie, status, gebruiksdoel, documentdatum, oppervlakte, pand, hoofdadres, ST_AsGeoJSON({geom_crs}) AS geom
-             FROM 'vbo.parquet'
+             FROM 'data/vbo.parquet'
              {where_statement}
              LIMIT ? OFFSET ?;
          """, [limit, offset]).fetchall()
@@ -393,7 +397,7 @@ def read_vboRef(
 
     db_result = db.execute(f"""
         SELECT identificatie, status, gebruiksdoel, documentdatum, oppervlakte, pand, hoofdadres, ST_AsGeoJSON({geom_crs}) AS geom
-        FROM 'vbo.parquet' 
+        FROM 'data/vbo.parquet' 
         WHERE identificatie = ?;
     """, [vboRef]).fetchone()
 
